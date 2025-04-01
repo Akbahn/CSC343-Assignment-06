@@ -1,0 +1,69 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h> 
+
+// Shared variable
+int shared_data = 0;
+
+// Mutex for synchronization
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Function for Thread_1 (Writer)
+void* writer_thread(void* arg) {
+    for (int i = 0; i < 5; i++) {
+        // Lock 
+        pthread_mutex_lock(&mutex);
+        
+        shared_data += 10; // Write to shared variable
+        printf("Thread_1: Wrote %d to shared_data\n", shared_data);
+        
+        // Unlock 
+        pthread_mutex_unlock(&mutex);
+        
+        sleep(1);
+    }
+    return NULL;
+}
+
+// Function for Thread_2 (Reader)
+void* reader_thread(void* arg) {
+    for (int i = 0; i < 5; i++) {
+        // Lock 
+        pthread_mutex_lock(&mutex);
+        
+        printf("Thread_2: Read %d from shared_data\n", shared_data);
+        
+        // Unlock 
+        pthread_mutex_unlock(&mutex);
+        
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    // Thread handles
+    pthread_t thread1, thread2;
+
+    // Create Thread_1 (Writer)
+    if (pthread_create(&thread1, NULL, writer_thread, NULL) != 0) {
+        perror("Failed to create Thread_1");
+        return 1;
+    }
+
+    // Create Thread_2 (Reader)
+    if (pthread_create(&thread2, NULL, reader_thread, NULL) != 0) {
+        perror("Failed to create Thread_2");
+        return 1;
+    }
+
+    // Wait for threads to complete
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+
+    // Clean up
+    pthread_mutex_destroy(&mutex);
+
+    printf("Main: Program completed\n");
+    return 0;
+}
